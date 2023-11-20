@@ -55,6 +55,9 @@ public class KeyHandler implements KeyListener {
             rightPressed = false;
             isKeyPressed = false;
         }
+        if(code ==KeyEvent.VK_SHIFT){
+            shiftPressed = false;
+        }
 
     }
 }

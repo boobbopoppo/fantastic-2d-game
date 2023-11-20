@@ -9,16 +9,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import Abilities.Abilities;
 
 public class GamePanel  extends JPanel implements Runnable {
     // SCREEN SETTINGS: this sets the size of the game screen, which is cool I guess
     final int originalTileSize = 16; // 16x16 tile
 
-
-    final public int maxScreenCol = 16;
+    // screen settings
+    final public int maxScreenCol = 16; // 16:9 aspect ratio
     final public int maxScreenRow = 9;
     double scale = 3;
-    public int res = 10;
+    public int res = 10; // in a txt file this selects resolution (default is 720p)
     int tileSize =(int) (originalTileSize * scale); // size of 1 tile
     int screenWidth = tileSize * maxScreenCol; // changes depending on the selected resolution
     int screenHeight = tileSize * maxScreenRow; // changes depending on the selected resolution
@@ -36,7 +37,9 @@ public class GamePanel  extends JPanel implements Runnable {
     Thread gameThread;
     TileManager tileMan = new TileManager(this);
     KeyHandler keyH = new KeyHandler();
-    public Player player = new Player(this, keyH);
+    Abilities abilities;
+    public CollisionCheck cC = new CollisionCheck(this);
+    public Player player = new Player(this, keyH, abilities);
 
 
     public GamePanel() {
@@ -105,7 +108,7 @@ public class GamePanel  extends JPanel implements Runnable {
              repaint();
              currentFPS++;
              if(timer >= 1000000000) {
-                 System.out.println("FPS: " + currentFPS + " X: " + (player.screenX) + " Y: " + (player.screenY));
+                 System.out.println("FPS: " + currentFPS);
                  currentFPS = 0;
                  timer = 0;
                  lastTime = 0;

@@ -1,5 +1,6 @@
 package Entity;
 
+import Abilities.Abilities;
 import Main.GamePanel;
 import Main.KeyHandler;
 
@@ -7,11 +8,13 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.Buffer;
+
+import Abilities.Dash;
 
 public class Player extends Entity {
     GamePanel gp;
     KeyHandler keyH;
+    Abilities abilities;
 
     public int screenX;
     public int screenY;
@@ -21,12 +24,22 @@ public class Player extends Entity {
     long cdInMillisRoll = 5000;
     boolean invicibility = false;
 
-    public Player(GamePanel gp, KeyHandler keyH){
+    // checks for collision
+    Dash dodge = new Dash();
+
+    public Player(GamePanel gp, KeyHandler keyH, Abilities abilities){
         this.gp = gp;
         this.keyH = keyH;
+        this.abilities = abilities;
         gp.setResolution(gp.res);
+
         screenX = gp.getScreenWidth() / 2 -(gp.getTileSize()/ 2);
         screenY = gp.getScreenHeight() / 2 - (gp.getTileSize()/ 2);
+
+        solidArea = new Rectangle(gp.getTileSize()/6, gp.getTileSize()/3, (int) (gp.getTileSize()/1.5), (int) (gp.getTileSize()/1.5));
+
+
+
         setDefaultValues();
         getPlayerImage();
     }
@@ -59,54 +72,45 @@ public class Player extends Entity {
         if(worldY + (gp.getScreenHeight() / 2)- gp.getWorldHeight() - (gp.getTileSize()/ 2) >= -(gp.getScreenHeight() +gp.getTileSize())) {
             screenY += worldY + (gp.getScreenHeight() / 2) - gp.getWorldHeight() +gp.getScreenHeight();
         }
-        // manage the shift button to dodge
-        if(keyH.shiftPressed && (System.currentTimeMillis() - rollLastCD >= cdInMillisRoll)){
-            if(direction =="left")  {
-                worldX -= 0.125* gp.getTileSize();
-                eyeFrame++;
-            }
-            if(direction =="right"){
-                worldX += 0.125* gp.getTileSize();
-                eyeFrame++;
-            }
-            if(direction =="up") {
-                worldY -= 0.125* gp.getTileSize();
-                eyeFrame++;
-            }
-            if(direction =="down") {
-                worldY += 0.125* gp.getTileSize();
-                eyeFrame++;
-            }
-            invicibility = true;
-            if(eyeFrame == 16){
-                eyeFrame = 0;
-                keyH.shiftPressed = false;
-                invicibility = false;
-                rollLastCD = System.currentTimeMillis();
-            }
-
-        }
-        if((System.currentTimeMillis() - rollLastCD >= cdInMillisRoll) && keyH.shiftPressed && eyeFrame == 0){
-            System.out.println("In cooldown");
-        }
+        // manage the shift button
+        if(keyH.shiftPressed) dodge.effect(keyH, this, gp);
 
         // sets movement of the player and decides partially which sprite is gonna be used
         if (keyH.upPressed){
-            worldY -= speed;
             direction = "up";
             spriteCounter++;
         } else if (keyH.downPressed) {
-            worldY += speed;
             direction = "down";
             spriteCounter++;
         } else if (keyH.rightPressed) {
-            worldX += speed;
             direction = "right";
             spriteCounter++;
         } else if (keyH.leftPressed) {
-            worldX -= speed;
             direction = "left";
             spriteCounter++;
+        }
+        // CHECK TILE COLLISION
+
+        collisionOn = false;
+        gp.cC.CheckTile(this);
+
+        // if collision is false player can move, otherwise it can't
+        if(collisionOn == false) {
+
+            switch(direction){
+                case "up":
+                    if(keyH.upPressed) worldY -= speed;
+                    break;
+                case "down":
+                    if(keyH.downPressed) worldY += speed;
+                    break;
+                case "left":
+                    if(keyH.leftPressed) worldX -= speed;
+                    break;
+                case "right":
+                    if(keyH.rightPressed) worldX += speed;
+                    break;
+            }
         }
 
         if(spriteNum == 3 && spriteCounter == 1){
@@ -148,29 +152,7 @@ public class Player extends Entity {
 
         }
         // draws sprite during the roll "animation"
-        if(keyH.shiftPressed){
-            if(eyeFrame > 0 && eyeFrame <= 4){
-                image = rolling_f_1;
-            } else if (eyeFrame > 5 && eyeFrame <= 8){
-                image = rolling_f_2;
-            } else if (eyeFrame > 9 && eyeFrame <= 12) {
-                image = rolling_f_3;
-            } else {
-                switch(direction){
-                    case("down"):
-                        image = downIdle;
-                        break;
-                    case("up"):
-                        image = upIdle;
-                        break;
-                    case ("left"):
-                        image = leftIdle;
-                    case ("right"):
-                        image = rightIdle;
-                }
-
-            }
-        }
+        if(keyH.shiftPressed) dodge.draw(image, keyH, this);
         g2.drawImage(image, screenX, screenY, gp.getTileSize(), gp.getTileSize(), null);
     }
     public void getPlayerImage(){
